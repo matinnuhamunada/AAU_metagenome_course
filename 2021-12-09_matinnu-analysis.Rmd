@@ -1,6 +1,6 @@
 ---
-title: "Group 4 - Dustbin Sample"
-author: "Matin https://github.com/user/repo.git"
+title: "Group 4 - Dustbin Sample Viruses"
+author: "Matin"
 date: "2021-12-09"
 output: html_document
 ---
