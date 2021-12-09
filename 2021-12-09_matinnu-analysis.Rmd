@@ -1,0 +1,160 @@
+---
+title: "Group 4 - Dustbin Sample"
+author: "Matin https://github.com/user/repo.git"
+date: "2021-12-09"
+output: html_document
+---
+
+## Load packages
+```{r, warning=FALSE, message=FALSE}
+library(mmgenome2)
+library(tidyverse)
+```
+
+# Sample Information
+The sample came from household dustbin, extracted with Qiagen Powersoil kit and run on ONT GridIon (R9.10 & LSK-110).
+
+## Nanopore run statistics
+Run stats:
+```{r, warning=FALSE, message=FALSE}
+nanopore_stats <- read.delim2("data/nanoplot_grp4/NanoStats.txt", 
+                              skip = 1, sep = ":", 
+                              nrows = 7, 
+                              header = F)
+nanopore_stats
+```
+
+![alt text here](data/nanoplot_grp4/LengthvsQualityScatterPlot_kde.png)
+
+
+### Load data on bins
+```{r, warning=FALSE, message=FALSE}
+bins <- read_delim("data/contig_bin.tsv", col_names = c("scaffold", "bin")) # load data and add new columns
+
+bins_checkm <- read_delim("data/checkm.tsv") 
+bins_gtdb <- read_delim("data/gtdb.tsv")
+
+# change the identifier columns with the same column name
+colnames(bins_checkm)[1] <- "bin"
+colnames(bins_gtdb)[1] <- "bin"
+
+# join the bins together
+bins_stats <- left_join(bins_checkm, bins_gtdb)
+```
+
+
+### Visualize and summarise bin stats
+```{r}
+# get a subset of the data of HQ bins (90% completeness, )
+HQbins <- filter(bins_stats, Completeness > 90 & Contamination < 5)
+MQbins <- filter(bins_stats, Completeness > 50 & Contamination < 10)
+
+# plot completeness vs contamination - turn off inline plot 
+ggplot(bins_stats, aes(x = Completeness, 
+                       y = Contamination,
+                       size = `Genome size (bp)`,
+                       col = GC
+                       )) +
+  geom_point() #define aesthetic and whats on the x and y axis
+
+```
+
+## Load data for manual binning
+
+###  Load and transform taxonomy data
+```{r, warning=FALSE, message=FALSE}
+kaiju <- read_delim("data/kaiju.out.names", col_names = c("temp", "contig", "temp2", "tax"))  %>%
+  separate(col = tax, into = c("kingdom","phylum", "class","order","family","genus","species"), sep = "; ") %>% # tidy taxonomy data
+  select(-temp, -temp2)
+
+kaiju[is.na(kaiju) | (kaiju == "NA")] <- "Unclassified"
+```
+
+### Load data on essential genes
+```{r, warning=FALSE, message=FALSE}
+ess <- read_delim("data/essential.txt") %>%
+  separate(col = orf, into = c("contigid", "orfid"), sep = "_") %>% # Take only the contig id
+  mutate(scaffold = paste0("contig_", contigid)) %>% 
+  select(scaffold, hmm.id)
+```
+
+### Load coverage data
+```{r, warning=FALSE, message=FALSE}
+coverage <- read.delim("data/contig_cov.tsv", header=T)
+```
+
+### Combine data in the mm object
+```{r, warning=FALSE, message=FALSE}
+mm_temp <- mmload(assembly = "data/assembly.fasta", 
+             coverage = coverage,
+             taxonomy = kaiju, 
+             kmer_pca = T, 
+             kmer_BH_tSNE = T,
+             essential_genes = ess,
+             additional = bins) # additional data
+
+#rm("assembly") # remove after to save memory
+```
+
+### Make a new coloring variable based on common seen bacteria
+```{r, warning=FALSE, message=FALSE}
+mm_ess_tax <- mm_temp %>%
+  mutate(ess_count = str_count(geneID, ",")) %>%
+  group_by(kingdom, phylum) %>%
+  summarise(total = sum(ess_count, na.rm = T)) %>%
+  filter(kingdom != "Unclassified") %>% # filtering to make sure it has at least 70 essential genes
+  filter(total > 20)
+
+mm <- mm_temp %>% 
+      mutate(ess_tax_temp = ifelse(is.na(geneID), NA ,phylum)) %>%
+      mutate(ess_tax = ifelse(phylum %in% mm_ess_tax$phylum, ess_tax_temp, NA)) %>%
+      select(-ess_tax_temp)
+```
+
+# Analysis
+
+## TSNE on kmers
+
+```{r}
+mmplot(mm = mm, 
+       x = "tSNE1", 
+       y = "tSNE2", 
+       color_by = "kingdom")
+```
+
+# Story: Household Viruses
+```{r}
+mm_viral <- mm %>% filter(kingdom %in% c("Viruses"))
+
+mmplot(mm = mm_viral, 
+       x = "tSNE1", 
+       y = "tSNE2", 
+       color_by = "species")
+```
+
+```{r}
+mm_viral_rat <- mm %>% filter(species %in% c("BeAn 58058 virus")) %>% filter(length > 7000) %>% filter(cov_np > 15)
+```
+
+```{r}
+
+sel <- data.frame(cov_np = c(10.538, 9.709, 16.071, 69.256, 118.842, 132.838, 140.436, 144.193, 124.212, 44.374, 37.348, 34.58, 27.129), length = c(28259.002, 6126.075, 5421.129, 4961.216, 10404.257, 6129.27, 7129.799, 10131.385, 24411.662, 28322.821, 29298.878, 29840.63, 30880.102))
+
+mmplot(mm = mm_viral_rat, 
+       x = "cov_np", 
+       y = "length", 
+       color_by = "species",
+       locator = F,
+       selection = sel)
+```
+```{r}
+mmstats(mm = mm_viral_rat)
+```
+# Genome Extraction
+
+```{r}
+
+rat_virus <- mmextract(mm_viral_rat, selection = sel)
+mmexport(rat_virus, assembly = assembly, file = "data/BeAn_58058_virus.fasta")
+
+```
