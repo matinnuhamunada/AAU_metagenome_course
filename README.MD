@@ -4,7 +4,7 @@
 This repository contains the analysis from group 4 for the course **Hands-on metagenomics using Oxford Nanopore DNA sequencing (2021)** at Aalborg University
 
 ```{bash}
-# git clone 
+# git clone git@github.com:matinnuhamunada/AAU_metagenome_course.git
 ```
 
 Download the data to `data/` folder
