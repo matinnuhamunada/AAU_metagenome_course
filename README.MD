@@ -21,3 +21,6 @@ mv group_4 data/
 Launch new project in the cloned directory. When it first launches in this project, `renv` should automatically bootstrap itself, thereby downloading and installing the appropriate version of `renv` into the project library. After this has completed, use `renv::restore()` to restore the project library locally on their machine.
 
 Find more information here: https://rstudio.github.io/renv/articles/collaborating.html
+
+## Notebooks
+- [Rodent virus contigs](https://htmlpreview.github.io/?https://github.com/matinnuhamunada/AAU_metagenome_course/blob/main/2021-12-09_matinnu-analysis.html)
