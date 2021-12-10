@@ -25,6 +25,12 @@
       "Repository": "CRAN",
       "Hash": "2fdca0877debdd4668190832cdee4c31"
     },
+    "BiocVersion": {
+      "Package": "BiocVersion",
+      "Version": "3.14.0",
+      "Source": "Bioconductor",
+      "Hash": "e57437f82a5c13263a9cf442b9796ba3"
+    },
     "Biostrings": {
       "Package": "Biostrings",
       "Version": "2.62.0",
@@ -603,6 +609,18 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "97def703420c8ab10d8f0e6c72101e02"
+    },
+    "rBLAST": {
+      "Package": "rBLAST",
+      "Version": "0.99.2",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "rBLAST",
+      "RemoteUsername": "mhahsler",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "2859dee2918ae61499b848d6413bd9174385e7ba",
+      "Hash": "acdeee220dd00de3c2258226080cc1f0"
     },
     "rappdirs": {
       "Package": "rappdirs",

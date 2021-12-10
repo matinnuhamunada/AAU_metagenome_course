@@ -119,7 +119,8 @@ mm <- mm_temp %>%
 mmplot(mm = mm, 
        x = "tSNE1", 
        y = "tSNE2", 
-       color_by = "kingdom")
+       color_by = "kingdom",
+       locator = )
 ```
 
 # Story: Household Viruses
@@ -158,3 +159,54 @@ rat_virus <- mmextract(mm_viral_rat, selection = sel)
 mmexport(rat_virus, assembly = assembly, file = "data/BeAn_58058_virus.fasta")
 
 ```
+
+
+```{bash}
+# download poxviridae database from https://www.viprbrc.org
+#wget https://www.viprbrc.org/brcDocs/datafiles/blast/DB_new_format/Pox_All.nt.tar.gz
+mkdir -p resources/pox_virus_db
+tar -xf Pox_All.nt.tar.gz -C resources/pox_virus_db/
+
+```
+
+```{r}
+# local BLAST with R: https://rsh249.github.io/bioinformatics/rBlast.html
+library(rBLAST)
+
+#makeblastdb creates a folder that contains a blast database like below
+makeblastdb('resources/pox_virus_db/Pox_All.nt', dbtype = "nucl") #This takes about 1hr
+
+#prepare for a BLAST query
+dna <- readDNAStringSet('data/BeAn_58058_virus.fasta', format='fasta')
+bl <- blast(db="resources/pox_virus_db/Pox_All.nt")
+
+#Run BLAST query
+cl <- predict(bl, dna[1:10])
+
+cl[1:1,]
+#to view first 3 hits
+summary(cl)
+#shows the top QueryID hits and other summary statistics including percent identity, alignment length and mismatches. 
+
+```
+
+```{r}
+library(Biostrings)
+top_hits <- unique(cl$SubjectID)
+top_hits
+```
+
+```{r}
+poxdb <- readDNAStringSet("resources/pox_virus_db/Pox_All.nt", "fasta")
+poxdb_ids <- names(poxdb)
+poxdb_ids[ startsWith(poxdb_ids, "gi|2661537|") ]
+```
+```{r}
+poxdb_ids[ startsWith(poxdb_ids, "gi|1792143|") ]
+```
+
+
+```{r}
+poxdb_ids[ startsWith(poxdb_ids, "gi|2529257|") ]
+```
+
